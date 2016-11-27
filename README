@@ -1,0 +1,87 @@
+1. Debug Interface Proxy
+========================
+The Debug Interface Proxy is a user-space application that acts as a debug tool
+proxy. The application listens on a TCP socket to which clients like host tools
+and Android applications can connect to for debug tool interaction.
+
+The TCP client socket interface is described in section 2 below.
+
+SYNOPSIS
+        debug_interface_proxy [-p <port> | --port=<port>]
+                              [-c <path> | --confpath=<path>]
+
+OPTIONS
+        -p <port>, --port=<port>
+            Socket server port the application listen for incoming connections
+            on. If no port option is provided the default port 3002 is opened.
+
+        -c <path>, --confpath=<path>
+            This is the path where the application will search for
+            configuration files during startup. If no path option is provided
+            a default location is used. The path can be retrieved using the
+            client socket interface.
+
+EXAMPLE
+        Start the application and open a TCP socket on port 3002:
+            debug_interface_proxy --port=3002 --confpath=/sdcard/mldconf
+
+2. Client socket interface
+==========================
+When the Debug Interface Proxy application is started it opens a TCP socket.
+All commands sent by clients to the socket interface must be ended with a
+newline character. The Debug Interface Proxy currently supports a trace command
+to interface MLD.
+
+The following trace options can be sent via the socket interface:
+
+SYNOPSIS
+        trace (-s <name> | --start=<name>) mld <command-line>
+        trace (-k <name> | --stop=<name>)
+        trace (-q | --query)
+        trace (-c | --confpath)
+
+OPTIONS
+        -s <name>, --start=<name>
+            Start a new MLD log session. The given name must be unique to be
+            able to keep track of running MLD processes. The name must be
+            followed by the mld marker and the command-line to be used when
+            starting MLD (see example below). The last part of the MLD
+            command-line is treated as the log directory, the log file name
+            will be appended by this application. The log file name is created
+            using the current time stamp together with the modem log target
+            (LOG_D_APP or LOG_D_ACC).
+
+        -k <name>, --stop=<name>
+            Stop a MLD log session. The given name will be matched against an
+            internal list of active MLD log sessions. If a match is found the
+            MLD process is terminated.
+
+        -q, --query
+            Get active MLD log sesions. This returns a space separated list
+            containing the names of all active log sessions.
+
+        -c, --confpath
+            Get the path that the application use to read MLD configuration
+            files.
+
+NOTE
+        Only one option can be provided for each trace command.
+
+RETURN VALUE
+        On success, the trace command returns the possible response data (from
+        e.g. trace -q) followed by the string "OK". On failure, the trace
+        command returns the string "KO".
+
+EXAMPLES
+        Start a new MLD log session:
+            trace -s modem_log_app mld -d -s 5120 -n 2 LOG_D_APP /sdcard
+
+        Stop an active MLD log session:
+            trace -k modem_log_app
+
+        List all active MLD log sessions:
+            trace -q
+
+        Get MLD configuration path:
+            trace -c
+
